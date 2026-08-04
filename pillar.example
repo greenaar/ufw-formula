@@ -1,0 +1,96 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+---
+# Every key below is optional and shown with a representative value.
+# Anything you omit falls back to `defaults.yaml`, then the osfamilymap /
+# osmap / osfingermap overrides, in that order (see `map.jinja`).
+ufw:
+  # Package(s) providing ufw. `package` is the main one; `packages` is a
+  # list of extras some platforms need (Suse pulls in `iptables`, for
+  # example).
+  package: ufw
+  packages: []
+
+  service:
+    name: ufw
+
+  # Files this formula templates out.
+  default_file: /etc/default/ufw
+  sysctl_file: /etc/ufw/sysctl.conf
+
+  # MASTER SWITCH. When false (the default) the formula still installs
+  # ufw and writes its config, but leaves the service dead and disabled -
+  # so you can roll the states out to a fleet before turning filtering
+  # on. Set to true only once your rules below are complete, or you can
+  # lock yourself out.
+  enabled: false
+
+  # Key/value pairs written into `default_file`. `loglevel` is consumed
+  # directly by the formula (`ufw logging <loglevel>`); the rest are
+  # rendered into /etc/default/ufw as-is.
+  settings:
+    loglevel: low
+    IPV6: 'yes'
+    DEFAULT_INPUT_POLICY: DROP
+    DEFAULT_OUTPUT_POLICY: ACCEPT
+    DEFAULT_FORWARD_POLICY: DROP
+
+  # Key/value pairs written into `sysctl_file`.
+  sysctl:
+    net/ipv4/conf/all/accept_redirects: 0
+    net/ipv4/conf/all/send_redirects: 0
+    net/ipv6/conf/default/accept_redirects: 0
+
+  # ------------------------------------------------------------------
+  # Rules by port/service. The dict key is used as `to_port` unless you
+  # override it. `from_addr` may be a single string or a list, in which
+  # case one rule is generated per entry.
+  # ------------------------------------------------------------------
+  services:
+    22:
+      protocol: tcp
+      limit: true                      # rate-limit rather than plain allow
+      comment: ssh from the office
+      from_addr:
+        - 198.51.100.0/24
+        - 203.0.113.10
+    80:
+      protocol: tcp
+      comment: http
+    443:
+      protocol: tcp
+      comment: https
+    postgres:
+      protocol: tcp
+      to_port: 5432
+      from_addr: 198.51.100.0/24
+      comment: app tier only
+    23:
+      protocol: tcp
+      deny: true                       # explicit deny
+      comment: no telnet
+
+  # ------------------------------------------------------------------
+  # Rules by ufw application profile name. Profiles live in
+  # /etc/ufw/applications.d - this formula ships a few under
+  # `files/applications.d/` (Zabbix, Munin, salt master, database
+  # server, ssh on 223) and recurses the whole directory onto the
+  # minion. Drop your own profiles in there, or manage them separately.
+  # ------------------------------------------------------------------
+  applications:
+    OpenSSH:
+      limit: true
+      comment: ssh
+    Zabbix agent:
+      from_addr: 198.51.100.5
+      comment: monitoring server
+
+  # Allow everything arriving on a given interface. Use with care.
+  interfaces:
+    wg0:
+      comment: wireguard tunnel
+
+  # Allow everything from a given source address/network.
+  open:
+    10.0.0.0/8:
+      comment: internal network

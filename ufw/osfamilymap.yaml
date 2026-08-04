@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+---
+Debian: {}
+RedHat: {}
+Suse:
+  packages:
+    - iptables
+Gentoo:
+  package: net-firewall/ufw

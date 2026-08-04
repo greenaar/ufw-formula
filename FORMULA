@@ -1,0 +1,9 @@
+name: ufw
+os: CentOS, CentOS Linux, Debian, Fedora, Funtoo, Gentoo, Leap, Raspbian, RedHat, SUSE, Ubuntu, openSUSE
+os_family: Debian, Gentoo, RedHat, Suse
+version: 1.0.0
+release: 1
+minimum_version: 3006
+summary: 'ufw formula'
+description: 'Install and configure ufw (the Uncomplicated Firewall), driving the whole ruleset from pillar.'
+top_level_dir: ufw
